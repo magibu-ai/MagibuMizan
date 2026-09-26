@@ -11,7 +11,23 @@ requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{name = "Magibu AI Research Lab"}]
+keywords = ["llm", "probabilities", "decision-making", "mlx", "turkish-nlp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/magibu-ai/MagibuMizan"
+Repository = "https://github.com/magibu-ai/MagibuMizan"
+Issues = "https://github.com/magibu-ai/MagibuMizan/issues"
+Benchmarks = "https://github.com/magibu-ai/MagibuMizan/blob/main/BENCHMARKS.md"
 
 [project.optional-dependencies]
 mlx = ["mlx-lm", "mlx-vlm"]

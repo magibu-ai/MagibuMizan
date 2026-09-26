@@ -8,7 +8,14 @@ The HTTP endpoint uses the request and answer fields of [TypeSafe's `/v1/systemo
 
 ## Install
 
-Python 3.10 or newer is required. Install from this repository:
+Python 3.10 or newer is required. Install from PyPI when the first release is available:
+
+```bash
+pip install "magibumizan[mlx,server]"     # Apple Silicon
+# or: pip install "magibumizan[cuda,server]" on an NVIDIA host
+```
+
+You can also install directly from this repository:
 
 ```bash
 git clone https://github.com/magibu-ai/MagibuMizan.git
@@ -79,7 +86,7 @@ curl http://127.0.0.1:8000/v1/systemone \
 
 `temperature` must be positive. The default `1.0` leaves the averaged distribution unscaled. `2.5` above is an estimate fitted to a Turkish MMLU subset with this 4-bit Gemma checkpoint; it is **not** a universal confidence guarantee. Fit and check a temperature on held-out examples from your own task before using probabilities to automate consequential decisions.
 
-See [BENCHMARKS.md](BENCHMARKS.md) for the evaluation method, model-specific accuracy, calibration results, dataset links, and limits of the comparisons.
+See [BENCHMARKS.md](https://github.com/magibu-ai/MagibuMizan/blob/main/BENCHMARKS.md) for the evaluation method, model-specific accuracy, calibration results, dataset links, and limits of the comparisons.
 
 ## Limits
 
