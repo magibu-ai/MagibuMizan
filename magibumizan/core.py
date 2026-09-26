@@ -5,6 +5,12 @@ import math
 import sys
 
 LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+class RequestValidationError(ValueError):
+    """Invalid state or question supplied by a caller."""
+
+
 PROMPT = (
     "Aşağıdaki duruma göre soruyu cevapla. Sadece doğru seçeneğin harfini yaz, açıklama yapma.\n\n"
     "Durum:\n{state}\n\nSoru: {question}\nSeçenekler:\n{options}"
@@ -20,7 +26,7 @@ class MLX:
             from mlx_vlm.models.cache import make_prompt_cache
 
             model, processor = load(name)
-            self.model, self.tok = model.language_model, processor.tokenizer
+            self.model, self.tok = model.language_model, getattr(processor, "tokenizer", processor)
             self.chat = self.tok if getattr(self.tok, "chat_template", None) else processor
         except ValueError as exc:  # Text-only checkpoints load with mlx-lm.
             if not (str(exc).startswith("Model type ") and " not supported" in str(exc)):
@@ -88,28 +94,28 @@ def _description(value):
 
 def _check_content(value, field):
     if not isinstance(value, (str, dict, list)):
-        raise ValueError(f"{field} must be a string, object, or array")
+        raise RequestValidationError(f"{field} must be a string, object, or array")
     try:
         json.dumps(value, ensure_ascii=False)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{field} must be JSON serializable") from exc
+        raise RequestValidationError(f"{field} must be JSON serializable") from exc
 
 
 def _options(question):
     if not isinstance(question, dict):
-        raise ValueError("each question must be an object")
+        raise RequestValidationError("each question must be an object")
     kind = question.get("type")
     if kind not in ("choice", "score", "noul"):
-        raise ValueError(f"unknown question type {kind!r}")
+        raise RequestValidationError(f"unknown question type {kind!r}")
     if "instructions" not in question:
-        raise ValueError("question instructions are required")
+        raise RequestValidationError("question instructions are required")
     _check_content(question["instructions"], "instructions")
 
     criteria = question.get("criteria")
     if kind == "noul":
         if criteria is not None:
             if not isinstance(criteria, dict) or set(criteria) - {"true", "false"}:
-                raise ValueError("noul criteria must contain only true and false descriptions")
+                raise RequestValidationError("noul criteria must contain only true and false descriptions")
             for key, value in criteria.items():
                 _check_content(value, f"noul criteria.{key}")
         criteria = criteria or {}
@@ -118,18 +124,18 @@ def _options(question):
 
     if kind == "choice":
         if not isinstance(criteria, dict) or not 2 <= len(criteria) <= len(LETTERS):
-            raise ValueError("choice criteria must have 2–26 options")
+            raise RequestValidationError("choice criteria must have 2–26 options")
         options = []
         for key, value in criteria.items():
             if not isinstance(key, str) or not key:
-                raise ValueError("choice option keys must be nonempty strings")
+                raise RequestValidationError("choice option keys must be nonempty strings")
             if value is not None:
                 _check_content(value, f"choice criteria.{key}")
             options.append((key, _description(value)))
         return options
 
     if not isinstance(criteria, list) or not 2 <= len(criteria) <= 10:
-        raise ValueError("score criteria must have 2–10 levels")
+        raise RequestValidationError("score criteria must have 2–10 levels")
     for index, value in enumerate(criteria):
         _check_content(value, f"score criteria[{index}]")
     return [(_display(value), "") for value in criteria]
@@ -194,14 +200,14 @@ class MagibuMizan:
         """Return ``(answers, input_tokens)`` for a map of typed questions."""
         _check_content(state, "state")
         if not isinstance(questions, dict) or not questions:
-            raise ValueError("questions must be a nonempty object")
+            raise RequestValidationError("questions must be a nonempty object")
         checked = []
         for name, question in questions.items():
             if not isinstance(name, str) or not name:
-                raise ValueError("question ids must be nonempty strings")
+                raise RequestValidationError("question ids must be nonempty strings")
             options = _options(question)
             if not all(self.available[: len(options)]):
-                raise ValueError("this model does not encode every required option letter as one token")
+                raise RequestValidationError("this model does not encode every required option letter as one token")
             checked.append((name, question, options))
 
         prompts = [

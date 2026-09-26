@@ -35,6 +35,17 @@ class MLXLoaderTests(unittest.TestCase):
         self.assertEqual(backend.make_cache(language_model), ("vlm", language_model))
         lm_load.assert_not_called()
 
+    def test_text_only_vlm_processor_is_itself_the_tokenizer(self):
+        language_model = object()
+        processor = types.SimpleNamespace(chat_template="template")
+        vlm_load = Mock(return_value=(types.SimpleNamespace(language_model=language_model), processor))
+        lm_load = Mock()
+        backend = self.load_with(vlm_load, lm_load)
+        self.assertIs(backend.model, language_model)
+        self.assertIs(backend.tok, processor)
+        self.assertIs(backend.chat, processor)
+        lm_load.assert_not_called()
+
     def test_unsupported_vlm_type_uses_lm(self):
         model, tokenizer = object(), object()
         vlm_load = Mock(side_effect=ValueError("Model type llama not supported. Error: missing module"))

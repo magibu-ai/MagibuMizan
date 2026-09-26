@@ -82,6 +82,8 @@ curl http://127.0.0.1:8000/v1/systemone \
 
 `MODEL` selects the server's local model. A request's `model` field is accepted for client compatibility but does not change that selection. `API_KEY` is optional; set it before exposing the service. `BACKEND` overrides automatic selection (`mlx` on macOS, `cuda` elsewhere). `MAX_QUESTIONS` defaults to 10. `GET /health` reports readiness. MLX inference is processed serially in the server process.
 
+The endpoint returns `401` for a missing or invalid API key, `422` for an invalid request, and `503` when local model inference fails. The server logs the underlying inference error.
+
 ## Calibration and evaluation
 
 `temperature` must be positive. The default `1.0` leaves the averaged distribution unscaled. `2.5` above is an estimate fitted to a Turkish MMLU subset with this 4-bit Gemma checkpoint; it is **not** a universal confidence guarantee. Fit and check a temperature on held-out examples from your own task before using probabilities to automate consequential decisions.

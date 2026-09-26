@@ -1,6 +1,7 @@
 """HTTP endpoint with TypeSafe's /v1/systemone request and answer shape."""
 
 import hmac
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from . import MagibuMizan
+from .core import RequestValidationError
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(engine=None, model=None, api_key=None, max_questions=None):
@@ -43,7 +48,8 @@ def create_app(engine=None, model=None, api_key=None, max_questions=None):
     @app.post("/v1/systemone")
     async def systemone(request: Request):
         if api_key and not hmac.compare_digest(
-            request.headers.get("authorization", ""), f"Bearer {api_key}"
+            request.headers.get("authorization", "").encode("utf-8"),
+            f"Bearer {api_key}".encode("utf-8"),
         ):
             return error(401, "invalid API key")
         try:
@@ -57,9 +63,16 @@ def create_app(engine=None, model=None, api_key=None, max_questions=None):
                 raise ValueError("questions must be a nonempty object")
             if len(questions) > max_questions:
                 raise ValueError(f"at most {max_questions} questions per request")
-            answers, tokens = app.state.engine.answer(body["state"], questions)
+            state = body["state"]
         except (KeyError, TypeError, ValueError) as exc:
             return error(422, str(exc))
+        try:
+            answers, tokens = app.state.engine.answer(state, questions)
+        except RequestValidationError as exc:
+            return error(422, str(exc))
+        except Exception:
+            logger.exception("model inference failed")
+            return error(503, "model inference failed")
         return {
             "model": model,
             "answers": answers,

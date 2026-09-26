@@ -73,7 +73,9 @@ class CoreTests(unittest.TestCase):
         bad_questions = [
             {},
             {"x": {"type": "choice", "instructions": "x", "criteria": {"only": None}}},
+            {"x": {"type": "choice", "instructions": "x", "criteria": ["one", "two"]}},
             {"x": {"type": "score", "instructions": "x", "criteria": list(range(11))}},
+            {"x": {"type": "score", "instructions": "x", "criteria": {"0": "Low", "1": "High"}}},
             {"x": {"type": "noul", "instructions": "x", "criteria": {"other": "x"}}},
             {"x": {"type": "noul"}},
         ]
