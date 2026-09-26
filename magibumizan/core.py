@@ -15,19 +15,21 @@ class MLX:
     def __init__(self, name):
         import mlx.core as mx
 
-        try:
-            from mlx_lm import load
-            from mlx_lm.models.cache import make_prompt_cache
-
-            self.model, self.tok = load(name)
-            self.chat = self.tok
-        except Exception:  # Multimodal checkpoints such as Gemma 4 need mlx-vlm.
+        try:  # Multimodal checkpoints such as Gemma 4 load with mlx-vlm; only the text model is used.
             from mlx_vlm import load
             from mlx_vlm.models.cache import make_prompt_cache
 
             model, processor = load(name)
             self.model, self.tok = model.language_model, processor.tokenizer
             self.chat = self.tok if getattr(self.tok, "chat_template", None) else processor
+        except ValueError as exc:  # Text-only checkpoints load with mlx-lm.
+            if not (str(exc).startswith("Model type ") and " not supported" in str(exc)):
+                raise
+            from mlx_lm import load
+            from mlx_lm.models.cache import make_prompt_cache
+
+            self.model, self.tok = load(name)
+            self.chat = self.tok
         self.mx, self.make_cache = mx, make_prompt_cache
 
     def probs(self, prompts, ids):
