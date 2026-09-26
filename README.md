@@ -8,7 +8,7 @@ The HTTP endpoint uses the request and answer fields of [TypeSafe's `/v1/systemo
 
 ## Install
 
-Python 3.10 or newer is required. Install from PyPI when the first release is available:
+Python 3.10 or newer is required. Install from PyPI:
 
 ```bash
 pip install "magibumizan[mlx,server]"     # Apple Silicon
